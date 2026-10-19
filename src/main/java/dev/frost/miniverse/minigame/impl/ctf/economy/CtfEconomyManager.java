@@ -53,19 +53,9 @@ public class CtfEconomyManager {
 
     public void rewardKill(ServerPlayerEntity killer, ServerPlayerEntity victim) {
         if (killer == null) return;
-        // Kill rewards: 12 coins, 6 gems (+33% of victim's current wallet)
+        // Kill rewards: 12 coins, 6 gems (no coin loss on death)
         int bonusCoins = 12;
         int bonusGems = 6;
-        if (victim != null) {
-            int victimCoins = getCoins(victim.getUuid());
-            int victimGems = getGems(victim.getUuid());
-            int stolenCoins = victimCoins / 3;
-            int stolenGems = victimGems / 3;
-            coins.put(victim.getUuid(), Math.max(0, victimCoins - stolenCoins));
-            gems.put(victim.getUuid(), Math.max(0, victimGems - stolenGems));
-            bonusCoins += stolenCoins;
-            bonusGems += stolenGems;
-        }
         addCoins(killer, bonusCoins);
         addGems(killer, bonusGems);
     }

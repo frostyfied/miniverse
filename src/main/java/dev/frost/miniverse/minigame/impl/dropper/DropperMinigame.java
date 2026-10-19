@@ -60,6 +60,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
@@ -81,6 +84,7 @@ public class DropperMinigame extends AbstractMinigame implements
 
     private final Map<UUID, Integer> playerLevelIndex = new HashMap<>();
     private final Map<UUID, Integer> playerFails = new HashMap<>();
+    private final Map<UUID, Integer> playerLevelFails = new HashMap<>();
     private final List<UUID> placements = new ArrayList<>();
     private final Map<UUID, Long> completedTimes = new HashMap<>();
 
@@ -132,6 +136,7 @@ public class DropperMinigame extends AbstractMinigame implements
             for (ServerPlayerEntity player : this.players()) {
                 this.playerLevelIndex.putIfAbsent(player.getUuid(), 0);
                 this.playerFails.putIfAbsent(player.getUuid(), 0);
+                this.playerLevelFails.putIfAbsent(player.getUuid(), 0);
                 this.teleportToSpawn(player);
                 player.changeGameMode(GameMode.ADVENTURE);
             }
@@ -209,6 +214,7 @@ public class DropperMinigame extends AbstractMinigame implements
         this.completedTimes.clear();
         this.playerLevelIndex.clear();
         this.playerFails.clear();
+        this.playerLevelFails.clear();
 
         this.buildMatchLevels();
 
@@ -216,6 +222,7 @@ public class DropperMinigame extends AbstractMinigame implements
             player.changeGameMode(GameMode.ADVENTURE);
             this.playerLevelIndex.put(player.getUuid(), 0);
             this.playerFails.put(player.getUuid(), 0);
+            this.playerLevelFails.put(player.getUuid(), 0);
             this.teleportToLevel(player, 0);
         }
 
@@ -325,7 +332,6 @@ public class DropperMinigame extends AbstractMinigame implements
                 return new PostDeathPolicy() {
                     @Override
                     public void start(ServerPlayerEntity player, DeathContext context) {
-                        handlePlayerFail(player);
                     }
 
                     @Override
@@ -428,14 +434,40 @@ public class DropperMinigame extends AbstractMinigame implements
         }
 
         int fails = this.playerFails.merge(player.getUuid(), 1, Integer::sum);
+        int levelFails = this.playerLevelFails.merge(player.getUuid(), 1, Integer::sum);
         int currentIdx = this.playerLevelIndex.getOrDefault(player.getUuid(), 0);
 
         player.networkHandler.sendPacket(new OverlayMessageS2CPacket(
-            Text.literal("§c§lOUCH! §7Respawning... §8(Fails: §e" + fails + "§8)")
+            Text.literal("§c§lOUCH! §7Respawning... §8(Level Fails: §e" + levelFails + "§8 | Total: §e" + fails + "§8)")
         ));
 
-        if (this.settings.allowSkip() && fails == this.settings.skipFailsThreshold()) {
-            player.sendMessage(Text.literal("§6§l[DROPPER] §eStuck? Type §b/dropper skip §eto advance to the next level!").formatted(Formatting.YELLOW));
+        int threshold = this.settings.skipFailsThreshold();
+        if (this.settings.allowSkip() && levelFails >= threshold && (levelFails == threshold || (levelFails - threshold) % 5 == 0)) {
+            MutableText skipButton = Text.literal("[Click to Skip Level]")
+                .styled(style -> style
+                    .withColor(Formatting.AQUA)
+                    .withBold(true)
+                    .withUnderline(true)
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dropper skip"))
+                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("§aClick here to skip Level " + (currentIdx + 1) + " and advance to Level " + (currentIdx + 2) + "!"))));
+
+            MutableText commandText = Text.literal("/dropper skip")
+                .styled(style -> style
+                    .withColor(Formatting.YELLOW)
+                    .withUnderline(true)
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dropper skip"))
+                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("§aClick to execute /dropper skip"))));
+
+            MutableText message = Text.literal("§6§l[DROPPER] §eStuck on Level " + (currentIdx + 1) + "? ")
+                .styled(style -> style
+                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/dropper skip"))
+                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("§aClick here to skip to Level " + (currentIdx + 2) + "!"))))
+                .append(skipButton)
+                .append(Text.literal(" §eor type ").formatted(Formatting.YELLOW))
+                .append(commandText)
+                .append(Text.literal(" §eto advance to the next level!").formatted(Formatting.YELLOW));
+
+            player.sendMessage(message, false);
         }
 
         this.teleportToLevel(player, currentIdx);
@@ -466,6 +498,7 @@ public class DropperMinigame extends AbstractMinigame implements
     private synchronized void handleLevelComplete(ServerPlayerEntity player, int completedIdx) {
         int nextIdx = completedIdx + 1;
         this.playerLevelIndex.put(player.getUuid(), nextIdx);
+        this.playerLevelFails.put(player.getUuid(), 0);
 
         if (nextIdx >= this.matchLevels.size()) {
             // Player completed the final level!
@@ -540,25 +573,27 @@ public class DropperMinigame extends AbstractMinigame implements
             return 0;
         }
 
-        int fails = this.playerFails.getOrDefault(player.getUuid(), 0);
-        if (fails < this.settings.skipFailsThreshold()) {
-            player.sendMessage(Text.literal("§cYou need at least " + this.settings.skipFailsThreshold() + " fails to skip this level! (Current: " + fails + ")").formatted(Formatting.RED));
+        int levelFails = this.playerLevelFails.getOrDefault(player.getUuid(), 0);
+        int threshold = this.settings.skipFailsThreshold();
+        if (levelFails < threshold) {
+            player.sendMessage(Text.literal("§cYou need at least " + threshold + " fails on this level to skip! (Current: " + levelFails + ")").formatted(Formatting.RED));
             return 0;
         }
 
         int currentIdx = this.playerLevelIndex.getOrDefault(player.getUuid(), 0);
-        GameMessenger.broadcast(this.players(), Text.literal("§7" + player.getName().getString() + " skipped Level " + (currentIdx + 1) + " after " + fails + " fails."));
+        GameMessenger.broadcast(this.players(), Text.literal("§7" + player.getName().getString() + " skipped Level " + (currentIdx + 1) + " after " + levelFails + " fails."));
         this.handleLevelComplete(player, currentIdx);
         return 1;
     }
 
     private void teleportToLevel(ServerPlayerEntity player, int levelIndex) {
         MapPosition spawn = this.getSpawnForLevel(levelIndex);
-        ServerWorld w = player.getServerWorld();
+        ServerWorld w = this.getWorld();
         if (w == null) {
-            w = this.getWorld();
+            w = player.getServerWorld();
         }
         if (w == null) return;
+        player.changeGameMode(GameMode.ADVENTURE);
         player.setVelocity(0, 0, 0);
         player.velocityModified = true;
         player.fallDistance = 0.0f;
@@ -605,6 +640,7 @@ public class DropperMinigame extends AbstractMinigame implements
         }
         this.playerLevelIndex.putIfAbsent(player.getUuid(), 0);
         this.playerFails.putIfAbsent(player.getUuid(), 0);
+        this.playerLevelFails.putIfAbsent(player.getUuid(), 0);
         this.teleportToSpawn(player);
         if (this.scoreboard != null) {
             this.scoreboard.show(List.of(player));

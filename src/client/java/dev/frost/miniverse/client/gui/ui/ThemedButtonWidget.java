@@ -14,6 +14,7 @@ public class ThemedButtonWidget extends ButtonWidget {
     private int relativeX = 0;
     private int relativeY = 0;
     private WorkspaceTooltip workspaceTooltip;
+    private boolean selected = false;
 
     public ThemedButtonWidget(int x, int y, int width, int height, Text message, PressAction onPress) {
         super(x, y, width, height, message, onPress, DEFAULT_NARRATION_SUPPLIER);
@@ -80,6 +81,15 @@ public class ThemedButtonWidget extends ButtonWidget {
         return this.workspaceTooltip != null ? this.workspaceTooltip::resolve : null;
     }
 
+    public ThemedButtonWidget setSelected(boolean selected) {
+        this.selected = selected;
+        return this;
+    }
+
+    public boolean isSelected() {
+        return this.selected;
+    }
+
     @Override
     protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
         TextRenderer textRenderer = MinecraftClient.getInstance().textRenderer;
@@ -95,10 +105,12 @@ public class ThemedButtonWidget extends ButtonWidget {
             return;
         }
 
-        int fill = UiAnimation.lerpColor(UiTheme.PANEL_RAISED, UiAnimation.alpha(this.accent, 0.34F), hovered ? 1.0F : 0.0F);
-        int border = UiAnimation.lerpColor(UiTheme.BORDER_SUBTLE, this.accent, hovered ? 1.0F : 0.0F);
+        boolean highlighted = hovered || this.selected;
+        float factor = highlighted ? 1.0F : 0.0F;
+        int fill = UiAnimation.lerpColor(UiTheme.PANEL_RAISED, UiAnimation.alpha(this.accent, this.selected ? 0.42F : 0.34F), factor);
+        int border = UiAnimation.lerpColor(UiTheme.BORDER_SUBTLE, this.accent, factor);
         UiRenderer.panel(context, this.getX(), this.getY(), this.getWidth(), this.getHeight(), fill, border);
-        int textColor = hovered ? UiTheme.TEXT : 0xFFE0E6ED;
+        int textColor = highlighted ? UiTheme.TEXT : 0xFFE0E6ED;
         context.drawCenteredTextWithShadow(textRenderer, this.getMessage(), this.getX() + this.getWidth() / 2, this.getY() + (this.getHeight() - 8) / 2, textColor);
     }
 }

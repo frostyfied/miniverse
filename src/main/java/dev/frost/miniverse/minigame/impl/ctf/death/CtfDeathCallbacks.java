@@ -76,10 +76,12 @@ public class CtfDeathCallbacks implements DeathLifecycleCallbacks {
             itemsToGive.add(axe);
         }
 
-        // Team wool
-        ItemStack wool = new ItemStack(this.getTeamWoolItem(context.victimTeamId()), 32);
-        InventoryLayoutFramework.tagKitItem(wool, "CTF_BLOCKS");
-        itemsToGive.add(wool);
+        // Team wool (only if blocks are enabled)
+        if (this.minigame.getSettings().allowBlocks()) {
+            ItemStack wool = new ItemStack(this.getTeamWoolItem(context.victimTeamId()), 32);
+            InventoryLayoutFramework.tagKitItem(wool, "CTF_BLOCKS");
+            itemsToGive.add(wool);
+        }
 
         // Compass
         ItemStack compass = CaptureTheFlagMinigame.createCompass();
@@ -113,17 +115,6 @@ public class CtfDeathCallbacks implements DeathLifecycleCallbacks {
     }
 
     private Item getTeamWoolItem(String teamId) {
-        Formatting color = this.minigame.getTeamColor(teamId);
-        if (color == null) return Items.WHITE_WOOL;
-        return switch (color) {
-            case RED, DARK_RED -> Items.RED_WOOL;
-            case BLUE, DARK_BLUE -> Items.BLUE_WOOL;
-            case GREEN, DARK_GREEN -> Items.LIME_WOOL;
-            case YELLOW, GOLD -> Items.YELLOW_WOOL;
-            case AQUA, DARK_AQUA -> Items.LIGHT_BLUE_WOOL;
-            case LIGHT_PURPLE, DARK_PURPLE -> Items.MAGENTA_WOOL;
-            case GRAY, DARK_GRAY -> Items.GRAY_WOOL;
-            default -> Items.WHITE_WOOL;
-        };
+        return this.minigame.getTeamWoolItem(teamId);
     }
 }

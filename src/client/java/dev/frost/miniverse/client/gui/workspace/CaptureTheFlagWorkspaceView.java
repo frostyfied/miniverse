@@ -39,6 +39,7 @@ public final class CaptureTheFlagWorkspaceView extends AbstractGamemodeWorkspace
     private boolean allowInvisibilityPotion = true;
     private boolean naturalRegeneration = true;
     private boolean suddenDeath = true;
+    private boolean allowBlocks = false;
 
     public CaptureTheFlagWorkspaceView() {
         super(CaptureTheFlagDefinition.ID);
@@ -141,11 +142,18 @@ public final class CaptureTheFlagWorkspaceView extends AbstractGamemodeWorkspace
             WorkspaceTooltip suddenDeathTooltip = WorkspaceTooltip.toggle(() -> this.suddenDeath,
                 "Enters overtime if scores are tied or a flag is carried when time expires.",
                 "Game ends immediately when match time expires.");
+            WorkspaceTooltip blocksTooltip = WorkspaceTooltip.toggle(() -> this.allowBlocks,
+                "Players receive blocks and can purchase blocks in the shop.",
+                "No blocks are given and the blocks tab is removed from the shop.");
 
             this.rulesLayout.addRow(
                 "Sudden Death", suddenDeathTooltip, (s, x, y, w) -> {
                     this.addToggleButton(s, "Sudden Death", () -> this.suddenDeath, x, y, w, suddenDeathTooltip,
                         () -> this.suddenDeath = !this.suddenDeath);
+                },
+                "Allow Blocks", blocksTooltip, (s, x, y, w) -> {
+                    this.addToggleButton(s, "Allow Blocks", () -> this.allowBlocks, x, y, w, blocksTooltip,
+                        () -> this.allowBlocks = !this.allowBlocks);
                 }
             );
         }
@@ -170,6 +178,7 @@ public final class CaptureTheFlagWorkspaceView extends AbstractGamemodeWorkspace
             Text.literal("Invis Potion: " + (this.allowInvisibilityPotion ? "ON" : "OFF")),
             Text.literal("Natural Regen: " + (this.naturalRegeneration ? "ON" : "OFF")),
             Text.literal("Sudden Death: " + (this.suddenDeath ? "ON" : "OFF")),
+            Text.literal("Blocks: " + (this.allowBlocks ? "ON" : "OFF")),
             Text.literal("Teams: " + this.teamGrid.getTeams().size())
         );
     }
@@ -233,6 +242,7 @@ public final class CaptureTheFlagWorkspaceView extends AbstractGamemodeWorkspace
         builder.settings().putBoolean("allowInvisibilityPotion", this.allowInvisibilityPotion);
         builder.settings().putBoolean("naturalRegeneration", this.naturalRegeneration);
         builder.settings().putBoolean("suddenDeath", this.suddenDeath);
+        builder.settings().putBoolean("allowBlocks", this.allowBlocks);
     }
 
     @Override
@@ -272,6 +282,9 @@ public final class CaptureTheFlagWorkspaceView extends AbstractGamemodeWorkspace
         if (settings.contains("suddenDeath")) {
             this.suddenDeath = settings.getBoolean("suddenDeath");
         }
+        if (settings.contains("allowBlocks")) {
+            this.allowBlocks = settings.getBoolean("allowBlocks");
+        }
 
         if (this.targetCapturesField != null) this.targetCapturesField.setText(String.valueOf(this.targetCaptures));
         if (this.matchDurationField != null) this.matchDurationField.setText(String.valueOf(this.matchDurationMinutes));
@@ -292,6 +305,7 @@ public final class CaptureTheFlagWorkspaceView extends AbstractGamemodeWorkspace
         this.allowInvisibilityPotion = true;
         this.naturalRegeneration = true;
         this.suddenDeath = true;
+        this.allowBlocks = false;
 
         if (this.targetCapturesField != null) this.targetCapturesField.setText(String.valueOf(this.targetCaptures));
         if (this.matchDurationField != null) this.matchDurationField.setText(String.valueOf(this.matchDurationMinutes));

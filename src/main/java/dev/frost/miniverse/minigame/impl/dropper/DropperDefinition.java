@@ -136,6 +136,21 @@ public final class DropperDefinition implements MinigameDefinition {
                     })
                 )
         );
+        dispatcher.register(
+            CommandManager.literal("dropperskip")
+                .executes(context -> {
+                    ServerPlayerEntity player = context.getSource().getPlayer();
+                    if (player == null) {
+                        context.getSource().sendFeedback(() -> Text.literal("Only players can execute /dropperskip"), false);
+                        return 0;
+                    }
+                    if (MinigameManager.getInstance().getActiveMinigame() instanceof DropperMinigame dm) {
+                        return dm.handleCommandSkip(player);
+                    }
+                    context.getSource().sendFeedback(() -> Text.literal("Dropper is not currently active.").formatted(Formatting.RED), false);
+                    return 0;
+                })
+        );
     }
 
     @Override

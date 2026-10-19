@@ -16,7 +16,8 @@ public record CaptureTheFlagSettings(
     boolean teamChatEnabled,
     boolean allowInvisibilityPotion,
     boolean naturalRegeneration,
-    boolean suddenDeath
+    boolean suddenDeath,
+    boolean allowBlocks
 ) {
     public CaptureTheFlagSettings(
         String mapId,
@@ -41,7 +42,8 @@ public record CaptureTheFlagSettings(
             teamChatEnabled,
             true,
             true,
-            true
+            true,
+            false
         );
     }
 
@@ -70,7 +72,39 @@ public record CaptureTheFlagSettings(
             teamChatEnabled,
             allowInvisibilityPotion,
             naturalRegeneration,
-            true
+            true,
+            false
+        );
+    }
+
+    public CaptureTheFlagSettings(
+        String mapId,
+        boolean eliminationMode,
+        int targetCaptures,
+        int matchDurationMinutes,
+        int respawnDelaySeconds,
+        int flagReturnDelaySeconds,
+        boolean requireOwnFlagAtBase,
+        boolean carrierGlowing,
+        boolean teamChatEnabled,
+        boolean allowInvisibilityPotion,
+        boolean naturalRegeneration,
+        boolean suddenDeath
+    ) {
+        this(
+            mapId,
+            eliminationMode,
+            targetCaptures,
+            matchDurationMinutes,
+            respawnDelaySeconds,
+            flagReturnDelaySeconds,
+            requireOwnFlagAtBase,
+            carrierGlowing,
+            teamChatEnabled,
+            allowInvisibilityPotion,
+            naturalRegeneration,
+            suddenDeath,
+            false
         );
     }
 
@@ -87,7 +121,8 @@ public record CaptureTheFlagSettings(
             false,  // teamChatEnabled
             true,   // allowInvisibilityPotion
             true,   // naturalRegeneration
-            true    // suddenDeath
+            true,   // suddenDeath
+            false   // allowBlocks (default OFF)
         );
     }
 
@@ -107,7 +142,8 @@ public record CaptureTheFlagSettings(
             nbt.contains("teamChatEnabled") && nbt.getBoolean("teamChatEnabled"),
             !nbt.contains("allowInvisibilityPotion") || nbt.getBoolean("allowInvisibilityPotion"),
             !nbt.contains("naturalRegeneration") || nbt.getBoolean("naturalRegeneration"),
-            !nbt.contains("suddenDeath") || nbt.getBoolean("suddenDeath")
+            !nbt.contains("suddenDeath") || nbt.getBoolean("suddenDeath"),
+            nbt.contains("allowBlocks") && nbt.getBoolean("allowBlocks")
         );
     }
 
@@ -124,6 +160,7 @@ public record CaptureTheFlagSettings(
         properties.setProperty("ctf.allowInvisibilityPotion", String.valueOf(this.allowInvisibilityPotion));
         properties.setProperty("ctf.naturalRegeneration", String.valueOf(this.naturalRegeneration));
         properties.setProperty("ctf.suddenDeath", String.valueOf(this.suddenDeath));
+        properties.setProperty("ctf.allowBlocks", String.valueOf(this.allowBlocks));
     }
 
     public static CaptureTheFlagSettings fromProperties(Properties properties) {
@@ -142,7 +179,8 @@ public record CaptureTheFlagSettings(
             Boolean.parseBoolean(properties.getProperty("ctf.teamChatEnabled", "false")),
             Boolean.parseBoolean(properties.getProperty("ctf.allowInvisibilityPotion", "true")),
             Boolean.parseBoolean(properties.getProperty("ctf.naturalRegeneration", "true")),
-            Boolean.parseBoolean(properties.getProperty("ctf.suddenDeath", "true"))
+            Boolean.parseBoolean(properties.getProperty("ctf.suddenDeath", "true")),
+            Boolean.parseBoolean(properties.getProperty("ctf.allowBlocks", "false"))
         );
     }
 
@@ -159,5 +197,6 @@ public record CaptureTheFlagSettings(
         nbt.putBoolean("allowInvisibilityPotion", this.allowInvisibilityPotion);
         nbt.putBoolean("naturalRegeneration", this.naturalRegeneration);
         nbt.putBoolean("suddenDeath", this.suddenDeath);
+        nbt.putBoolean("allowBlocks", this.allowBlocks);
     }
 }

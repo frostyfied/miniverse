@@ -920,8 +920,17 @@ public abstract class AbstractGamemodeWorkspaceView implements WorkspaceView, Ga
         }
     }
 
+    private boolean isExportingPreset = false;
+
     protected NbtCompound exportPresetSettings() {
-        this.syncStateFromWidgets();
+        if (!this.isExportingPreset) {
+            this.isExportingPreset = true;
+            try {
+                this.syncStateFromWidgets();
+            } finally {
+                this.isExportingPreset = false;
+            }
+        }
         SessionPayloadBuilder builder = new SessionPayloadBuilder(this.gameId(), this.sessionName);
         if (this.mapGrid != null && this.selectedMapId != null && !this.selectedMapId.isBlank()) {
             builder.settings().putString("mapId", this.selectedMapId);

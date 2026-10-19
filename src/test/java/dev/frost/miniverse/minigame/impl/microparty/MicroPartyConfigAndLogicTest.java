@@ -1026,4 +1026,23 @@ public class MicroPartyConfigAndLogicTest {
         Assert.assertEquals(1, restored.intermissionSeconds());
         Assert.assertEquals("POINTS", restored.gameMode());
     }
+
+    @Test
+    public void testMortarReticleRecordAndMetadata() {
+        MortarStrikeRule rule = new MortarStrikeRule();
+        Assert.assertEquals("mortar_strike", rule.id());
+        Assert.assertEquals("Mortar Strike", rule.name());
+        Assert.assertEquals(7, rule.baseDurationSeconds());
+        Assert.assertEquals(4.0, rule.minDurationSeconds(), 0.01);
+
+        MortarStrikeRule.MortarReticle reticle = new MortarStrikeRule.MortarReticle(
+            10.0, 64.0, -5.0, 3.2, 140, 70
+        );
+        Assert.assertEquals(10.0, reticle.x(), 0.001);
+        Assert.assertEquals(64.0, reticle.y(), 0.001);
+        Assert.assertEquals(-5.0, reticle.z(), 0.001);
+        Assert.assertEquals(3.2, reticle.radius(), 0.001);
+        Assert.assertEquals(140, reticle.spawnRemainingTicks());
+        Assert.assertEquals(70, reticle.detonateTick());
+    }
 }

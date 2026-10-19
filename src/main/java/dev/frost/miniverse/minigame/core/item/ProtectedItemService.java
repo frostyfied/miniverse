@@ -1,5 +1,7 @@
 package dev.frost.miniverse.minigame.core.item;
 
+import dev.frost.miniverse.minigame.core.Minigame;
+import dev.frost.miniverse.minigame.core.MinigameManager;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
@@ -49,6 +51,13 @@ public final class ProtectedItemService {
     }
 
     public boolean shouldCancelDrop(ServerPlayerEntity player, ItemStack stack) {
+        if (player != null && stack != null && !stack.isEmpty()) {
+            Minigame active = MinigameManager.getInstance().getActiveMinigame();
+            if (active instanceof ItemDropProtectionAware dropAware && dropAware.shouldCancelItemDrop(player, stack)) {
+                return true;
+            }
+        }
+
         ProtectedItemRule rule = ruleFor(stack);
         if (rule == null) {
             return false;
@@ -130,6 +139,21 @@ public final class ProtectedItemService {
                     return true;
                 }
                 if (externalSlot && slotRule.preventExternalStorage()) {
+                    return true;
+                }
+            }
+        }
+
+        Minigame active = MinigameManager.getInstance().getActiveMinigame();
+        if (active instanceof ItemDropProtectionAware dropAware) {
+            if (actionType == SlotActionType.THROW) {
+                ItemStack target = (slot != null && !slotStack.isEmpty()) ? slotStack : cursorStack;
+                if (!target.isEmpty() && dropAware.shouldCancelItemDrop(player, target)) {
+                    return true;
+                }
+            }
+            if (!slotValid && (actionType == SlotActionType.THROW || actionType == SlotActionType.PICKUP)) {
+                if (!cursorStack.isEmpty() && dropAware.shouldCancelItemDrop(player, cursorStack)) {
                     return true;
                 }
             }

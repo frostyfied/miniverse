@@ -23,6 +23,7 @@ public class CaptureTheFlagSettingsTest {
         Assert.assertTrue(settings.allowInvisibilityPotion());
         Assert.assertTrue(settings.naturalRegeneration());
         Assert.assertTrue(settings.suddenDeath());
+        Assert.assertFalse(settings.allowBlocks());
     }
 
     @Test
@@ -58,6 +59,7 @@ public class CaptureTheFlagSettingsTest {
         Assert.assertFalse(parsed.allowInvisibilityPotion());
         Assert.assertFalse(parsed.naturalRegeneration());
         Assert.assertFalse(parsed.suddenDeath());
+        Assert.assertFalse(parsed.allowBlocks());
     }
 
     @Test
@@ -93,5 +95,36 @@ public class CaptureTheFlagSettingsTest {
         Assert.assertTrue(parsed.allowInvisibilityPotion());
         Assert.assertTrue(parsed.naturalRegeneration());
         Assert.assertTrue(parsed.suddenDeath());
+        Assert.assertFalse(parsed.allowBlocks());
+    }
+
+    @Test
+    public void testAllowBlocksEnabled() {
+        CaptureTheFlagSettings original = new CaptureTheFlagSettings(
+            "castle_blocks",
+            false,
+            3,
+            15,
+            5,
+            15,
+            true,
+            true,
+            false,
+            true,
+            true,
+            true,
+            true
+        );
+        Assert.assertTrue(original.allowBlocks());
+
+        NbtCompound nbt = new NbtCompound();
+        original.writeTo(nbt);
+        CaptureTheFlagSettings fromNbt = CaptureTheFlagSettings.fromNbt(nbt);
+        Assert.assertTrue(fromNbt.allowBlocks());
+
+        Properties props = new Properties();
+        original.writeTo(props);
+        CaptureTheFlagSettings fromProps = CaptureTheFlagSettings.fromProperties(props);
+        Assert.assertTrue(fromProps.allowBlocks());
     }
 }

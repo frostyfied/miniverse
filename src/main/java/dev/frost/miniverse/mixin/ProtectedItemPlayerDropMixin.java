@@ -25,7 +25,7 @@ public abstract class ProtectedItemPlayerDropMixin {
             return;
         }
         if (ProtectedItemService.getInstance().shouldCancelDrop(serverPlayer, stack)) {
-            ProtectedItemFeedback.sendRuleBlockedMessage(serverPlayer);
+            ProtectedItemFeedback.sendDropBlockedMessage(serverPlayer);
             RETURNING_ITEM.set(Boolean.TRUE);
             try {
                 serverPlayer.getInventory().offerOrDrop(stack);

@@ -16,7 +16,7 @@ public abstract class ProtectedItemServerPlayerEntityMixin {
         ServerPlayerEntity player = (ServerPlayerEntity) (Object) this;
         ItemStack selectedStack = player.getMainHandStack();
         if (ProtectedItemService.getInstance().shouldCancelDrop(player, selectedStack)) {
-            ProtectedItemFeedback.sendRuleBlockedMessage(player);
+            ProtectedItemFeedback.sendDropBlockedMessage(player);
             player.playerScreenHandler.sendContentUpdates();
             cir.setReturnValue(false);
         }

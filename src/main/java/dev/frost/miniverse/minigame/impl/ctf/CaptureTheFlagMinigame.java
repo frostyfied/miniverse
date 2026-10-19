@@ -25,6 +25,7 @@ import dev.frost.miniverse.minigame.core.event.PlayerLeaveAware;
 import dev.frost.miniverse.minigame.core.event.RosterAware;
 import dev.frost.miniverse.minigame.core.event.ServerTickAware;
 import dev.frost.miniverse.minigame.core.event.SpawnPointAware;
+import dev.frost.miniverse.minigame.core.item.ItemDropProtectionAware;
 import dev.frost.miniverse.minigame.core.layout.InventoryLayoutAware;
 import dev.frost.miniverse.minigame.core.layout.InventoryLayoutFramework;
 import dev.frost.miniverse.minigame.core.lifecycle.MatchEndResult;
@@ -51,6 +52,7 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.LodestoneTrackerComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
@@ -84,7 +86,7 @@ public class CaptureTheFlagMinigame extends AbstractMinigame implements
     DeathAwareMinigame, TeamManagerProvider, BlockBreakAware, BlockBreakBypassAware,
     EntityInteractAware, SpawnPointAware, RosterAware, PlayerLeaveAware,
     PersistentMinigame, ServerTickAware, InventoryLayoutAware, ItemUseAware, ItemUseOnBlockAware,
-    PlayerDamageAware, GlowVisibilityAware, ChatRoutingAware {
+    PlayerDamageAware, GlowVisibilityAware, ChatRoutingAware, ItemDropProtectionAware {
 
     private GameState state = GameState.WAITING_FOR_PLAYERS;
     private final TeamManager teamManager = new TeamManager();
@@ -303,6 +305,13 @@ public class CaptureTheFlagMinigame extends AbstractMinigame implements
             InventoryLayoutFramework.tagKitItem(arrows, "CTF_ARROWS");
             initialItems.add(arrows);
 
+            if (this.settings.allowBlocks()) {
+                String teamId = this.teamManager.teamId(player.getUuid());
+                ItemStack wool = new ItemStack(this.getTeamWoolItem(teamId), 32);
+                InventoryLayoutFramework.tagKitItem(wool, "CTF_BLOCKS");
+                initialItems.add(wool);
+            }
+
             initialItems.add(createCompass());
 
             InventoryLayoutFramework.applyLayout(player, CaptureTheFlagDefinition.ID, initialItems);
@@ -454,6 +463,9 @@ public class CaptureTheFlagMinigame extends AbstractMinigame implements
 
         ItemStack stack = player.getStackInHand(hand);
         if (stack.getItem() instanceof net.minecraft.item.BlockItem) {
+            if (!this.settings.allowBlocks()) {
+                return ActionResult.FAIL;
+            }
             BlockPos hitPos = hitResult.getBlockPos();
             BlockState hitState = world.getBlockState(hitPos);
             BlockPos placePos = hitState.isReplaceable() ? hitPos : hitPos.offset(hitResult.getSide());
@@ -1018,6 +1030,26 @@ public class CaptureTheFlagMinigame extends AbstractMinigame implements
             case GRAY, DARK_GRAY -> Blocks.GRAY_WOOL.getDefaultState();
             default -> Blocks.WHITE_WOOL.getDefaultState();
         };
+    }
+
+    public Item getTeamWoolItem(String teamId) {
+        Formatting color = this.getTeamColor(teamId);
+        if (color == null) return Items.WHITE_WOOL;
+        return switch (color) {
+            case RED, DARK_RED -> Items.RED_WOOL;
+            case BLUE, DARK_BLUE -> Items.BLUE_WOOL;
+            case GREEN, DARK_GREEN -> Items.LIME_WOOL;
+            case YELLOW, GOLD -> Items.YELLOW_WOOL;
+            case AQUA, DARK_AQUA -> Items.LIGHT_BLUE_WOOL;
+            case LIGHT_PURPLE, DARK_PURPLE -> Items.MAGENTA_WOOL;
+            case GRAY, DARK_GRAY -> Items.GRAY_WOOL;
+            default -> Items.WHITE_WOOL;
+        };
+    }
+
+    @Override
+    public boolean shouldCancelItemDrop(ServerPlayerEntity player, ItemStack stack) {
+        return player != null && this.teamManager.contains(player.getUuid());
     }
 
     private Entity findEntity(MinecraftServer server, UUID uuid) {

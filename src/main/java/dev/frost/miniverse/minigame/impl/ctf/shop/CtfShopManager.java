@@ -90,20 +90,22 @@ public class CtfShopManager {
         List<ShopCategory> list = new ArrayList<>();
 
         // 1. Blocks Category (Coins)
-        list.add(new ShopCategory() {
-            @Override
-            public Text getName() { return Text.literal("Blocks"); }
-            @Override
-            public ItemStack getIcon() { return new ItemStack(Items.RED_WOOL); }
-            @Override
-            public List<ShopItem> getItems(ServerPlayerEntity player) {
-                return List.of(
-                    new SimpleItem(new ItemStack(Items.WHITE_WOOL, 16), 5, coins),
-                    new SimpleItem(new ItemStack(Items.OAK_PLANKS, 16), 10, coins),
-                    new SimpleItem(new ItemStack(Items.END_STONE, 12), 24, coins)
-                );
-            }
-        });
+        if (this.minigame.getSettings().allowBlocks()) {
+            list.add(new ShopCategory() {
+                @Override
+                public Text getName() { return Text.literal("Blocks"); }
+                @Override
+                public ItemStack getIcon() { return new ItemStack(Items.RED_WOOL); }
+                @Override
+                public List<ShopItem> getItems(ServerPlayerEntity player) {
+                    return List.of(
+                        new SimpleItem(new ItemStack(Items.WHITE_WOOL, 16), 5, coins),
+                        new SimpleItem(new ItemStack(Items.OAK_PLANKS, 16), 10, coins),
+                        new SimpleItem(new ItemStack(Items.END_STONE, 12), 24, coins)
+                    );
+                }
+            });
+        }
 
         // 2. Combat & Consumables (Coins)
         list.add(new ShopCategory() {
@@ -145,8 +147,7 @@ public class CtfShopManager {
                 return List.of(
                     new ToolPurchaseItem(Items.SHEARS, "Shears", 15, coins, state -> state.setHasShears(true), CtfPlayerUpgradeState::hasShears),
                     new ToolPurchaseItem(Items.STONE_AXE, "Stone Axe", 30, coins, state -> state.setHasAxe(true), CtfPlayerUpgradeState::hasAxe),
-                    new SimpleItem(new ItemStack(Items.TNT), 30, coins),
-                    new SimpleItem(new ItemStack(Items.WIND_CHARGE, 2), 25, coins)
+                    new SimpleItem(new ItemStack(Items.TNT), 30, coins)
                 );
             }
         });
@@ -210,9 +211,13 @@ public class CtfShopManager {
         @Override public ShopCurrency getCurrency(ServerPlayerEntity player) { return currency; }
         @Override public boolean onPurchase(ServerPlayerEntity player) {
             ItemStack copy = stack.copy();
+            if (player.getInventory().getEmptySlot() == -1 && player.getInventory().getOccupiedSlotWithRoomForStack(copy) == -1) {
+                player.sendMessage(Text.literal("Inventory is full!").formatted(Formatting.RED), true);
+                return false;
+            }
             player.getInventory().insertStack(copy);
             if (!copy.isEmpty()) {
-                player.dropItem(copy, false);
+                player.getInventory().offerOrDrop(copy);
             }
             player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 1.0F, 1.0F);
             return true;

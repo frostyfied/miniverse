@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class ProtectedItemFeedback {
     private static final Text RULE_BLOCKED_MESSAGE = Text.literal("This special item cannot be moved there.");
+    private static final Text DROP_BLOCKED_MESSAGE = Text.literal("§cYou cannot drop items!");
     private static final int MESSAGE_COOLDOWN_TICKS = 20;
     private static final Map<UUID, Integer> LAST_MESSAGE_TICK = new ConcurrentHashMap<>();
 
@@ -16,6 +17,14 @@ public final class ProtectedItemFeedback {
     }
 
     public static void sendRuleBlockedMessage(PlayerEntity player) {
+        sendFeedback(player, RULE_BLOCKED_MESSAGE);
+    }
+
+    public static void sendDropBlockedMessage(PlayerEntity player) {
+        sendFeedback(player, DROP_BLOCKED_MESSAGE);
+    }
+
+    private static void sendFeedback(PlayerEntity player, Text message) {
         if (player == null) {
             return;
         }
@@ -27,6 +36,6 @@ public final class ProtectedItemFeedback {
         }
 
         LAST_MESSAGE_TICK.put(player.getUuid(), currentTick);
-        player.sendMessage(RULE_BLOCKED_MESSAGE, true);
+        player.sendMessage(message, true);
     }
 }

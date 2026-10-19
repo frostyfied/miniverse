@@ -2,6 +2,7 @@ package dev.frost.miniverse.client.gui.workspace;
 
 import dev.frost.miniverse.client.gui.SessionScreen;
 import dev.frost.miniverse.client.gui.ui.IntFieldWidget;
+import dev.frost.miniverse.client.gui.ui.ThemedButtonWidget;
 import dev.frost.miniverse.client.gui.ui.UiRenderer;
 import dev.frost.miniverse.client.gui.ui.UiTheme;
 import dev.frost.miniverse.client.gui.workspace.components.StaticTeamSelectionGrid;
@@ -176,47 +177,56 @@ public final class ZombiesWorkspaceView extends AbstractGamemodeWorkspaceView {
         int moduleWidth = this.layout.mainPanel().width() - 28;
         int moduleHeight = this.layout.mainPanel().height() - 104;
 
-        int tabY = moduleY + 12;
+        int tabY = moduleY + 24;
 
         // Subtab toggle: Weapons vs Difficulty
-        ButtonWidget weaponsSubTabBtn = ButtonWidget.builder(
+        ThemedButtonWidget weaponsSubTabBtn = new ThemedButtonWidget(
+            moduleX + 12, tabY, 160, 20,
             Text.literal((this.activeTuningSubTab == TuningSubTab.WEAPONS ? "⚔ " : "") + "Weapons & Mystery Box"),
             btn -> {
                 this.syncStateFromWidgets();
                 this.activeTuningSubTab = TuningSubTab.WEAPONS;
                 screen.rebuildWorkspaceChildren();
             }
-        ).dimensions(moduleX + 12, tabY, 160, 20).build();
+        );
+        weaponsSubTabBtn.setAccent(UiTheme.ACCENT_GREEN);
+        weaponsSubTabBtn.setSelected(this.activeTuningSubTab == TuningSubTab.WEAPONS);
         screen.addWidget(weaponsSubTabBtn);
 
-        ButtonWidget diffSubTabBtn = ButtonWidget.builder(
+        ThemedButtonWidget diffSubTabBtn = new ThemedButtonWidget(
+            moduleX + 178, tabY, 150, 20,
             Text.literal((this.activeTuningSubTab == TuningSubTab.DIFFICULTY ? "💀 " : "") + "Difficulty & Waves"),
             btn -> {
                 this.syncStateFromWidgets();
                 this.activeTuningSubTab = TuningSubTab.DIFFICULTY;
                 screen.rebuildWorkspaceChildren();
             }
-        ).dimensions(moduleX + 178, tabY, 150, 20).build();
+        );
+        diffSubTabBtn.setAccent(UiTheme.ACCENT_GREEN);
+        diffSubTabBtn.setSelected(this.activeTuningSubTab == TuningSubTab.DIFFICULTY);
         screen.addWidget(diffSubTabBtn);
 
         // Reset Button
         if (this.activeTuningSubTab == TuningSubTab.WEAPONS) {
             int resetBtnX = moduleX + moduleWidth - 145;
-            ButtonWidget resetWeaponsBtn = ButtonWidget.builder(
+            ThemedButtonWidget resetWeaponsBtn = new ThemedButtonWidget(
+                resetBtnX, tabY, 135, 20,
                 Text.literal("↺ Reset Weapons"),
                 btn -> {
                     this.weaponConfig.resetToDefaults();
                     this.status = ValidationResult.info("Restored default weapon stats.");
                     screen.rebuildWorkspaceChildren();
                 }
-            ).dimensions(resetBtnX, tabY, 135, 20).build();
+            );
+            resetWeaponsBtn.setAccent(UiTheme.ACCENT_RED);
             screen.addWidget(resetWeaponsBtn);
 
             // Scroll buttons
             int maxRows = calculateMaxVisibleWeaponRows(moduleHeight);
             int totalWeapons = WeaponType.values().length;
             if (totalWeapons > maxRows) {
-                ButtonWidget scrollUpBtn = ButtonWidget.builder(
+                ThemedButtonWidget scrollUpBtn = new ThemedButtonWidget(
+                    resetBtnX - 52, tabY, 22, 20,
                     Text.literal("▲"),
                     btn -> {
                         if (this.weaponScrollOffset > 0) {
@@ -225,11 +235,13 @@ public final class ZombiesWorkspaceView extends AbstractGamemodeWorkspaceView {
                             screen.rebuildWorkspaceChildren();
                         }
                     }
-                ).dimensions(resetBtnX - 52, tabY, 22, 20).build();
+                );
+                scrollUpBtn.setAccent(UiTheme.ACCENT_GREEN);
                 scrollUpBtn.active = this.weaponScrollOffset > 0;
                 screen.addWidget(scrollUpBtn);
 
-                ButtonWidget scrollDownBtn = ButtonWidget.builder(
+                ThemedButtonWidget scrollDownBtn = new ThemedButtonWidget(
+                    resetBtnX - 26, tabY, 22, 20,
                     Text.literal("▼"),
                     btn -> {
                         if (this.weaponScrollOffset + maxRows < totalWeapons) {
@@ -238,13 +250,14 @@ public final class ZombiesWorkspaceView extends AbstractGamemodeWorkspaceView {
                             screen.rebuildWorkspaceChildren();
                         }
                     }
-                ).dimensions(resetBtnX - 26, tabY, 22, 20).build();
+                );
+                scrollDownBtn.setAccent(UiTheme.ACCENT_GREEN);
                 scrollDownBtn.active = this.weaponScrollOffset + maxRows < totalWeapons;
                 screen.addWidget(scrollDownBtn);
             }
 
             // Populate visible weapon rows
-            int listY = moduleY + 38;
+            int listY = moduleY + 50;
             int rowHeight = 25;
             int maxScroll = Math.max(0, totalWeapons - maxRows);
             this.weaponScrollOffset = Math.clamp(this.weaponScrollOffset, 0, maxScroll);
@@ -258,20 +271,25 @@ public final class ZombiesWorkspaceView extends AbstractGamemodeWorkspaceView {
 
                 // Mystery Box Toggle Button
                 int chestBtnX = moduleX + 185;
-                ButtonWidget chestBtn;
+                ThemedButtonWidget chestBtn;
                 if (wt.getData().isMelee()) {
-                    chestBtn = ButtonWidget.builder(Text.literal("Melee (N/A)"), b -> {}).dimensions(chestBtnX, curY + 2, 92, 18).build();
+                    chestBtn = new ThemedButtonWidget(chestBtnX, curY + 2, 92, 18, Text.literal("Melee (N/A)"), b -> {});
                     chestBtn.active = false;
                 } else {
                     boolean inChest = this.weaponConfig.isAllowedInLuckyChest(wt);
-                    chestBtn = ButtonWidget.builder(
+                    chestBtn = new ThemedButtonWidget(
+                        chestBtnX, curY + 2, 92, 18,
                         Text.literal(inChest ? "✔ In Chest" : "✖ Excluded"),
                         b -> {
                             boolean newState = !this.weaponConfig.isAllowedInLuckyChest(wt);
                             this.weaponConfig.setInLuckyChest(wt, newState);
                             b.setMessage(Text.literal(newState ? "✔ In Chest" : "✖ Excluded"));
+                            if (b instanceof ThemedButtonWidget tb) {
+                                tb.setAccent(newState ? UiTheme.ACCENT_GREEN : UiTheme.ACCENT_RED);
+                            }
                         }
-                    ).dimensions(chestBtnX, curY + 2, 92, 18).build();
+                    );
+                    chestBtn.setAccent(inChest ? UiTheme.ACCENT_GREEN : UiTheme.ACCENT_RED);
                 }
                 screen.addWidget(chestBtn);
 
@@ -302,35 +320,40 @@ public final class ZombiesWorkspaceView extends AbstractGamemodeWorkspaceView {
         } else {
             // DIFFICULTY SUB-TAB
             int resetBtnX = moduleX + moduleWidth - 155;
-            ButtonWidget resetDiffBtn = ButtonWidget.builder(
+            ThemedButtonWidget resetDiffBtn = new ThemedButtonWidget(
+                resetBtnX, tabY, 145, 20,
                 Text.literal("↺ Reset Difficulty"),
                 btn -> {
                     this.difficultyConfig.resetDifficulty(this.activeDifficultyTuning);
                     this.status = ValidationResult.info("Restored default " + this.activeDifficultyTuning.getDisplayName() + " difficulty.");
                     screen.rebuildWorkspaceChildren();
                 }
-            ).dimensions(resetBtnX, tabY, 145, 20).build();
+            );
+            resetDiffBtn.setAccent(UiTheme.ACCENT_RED);
             screen.addWidget(resetDiffBtn);
 
             // Difficulty select tabs
             int diffTabX = moduleX + 12;
             for (ZombiesDifficulty d : ZombiesDifficulty.values()) {
                 boolean isCurrent = d == this.activeDifficultyTuning;
-                ButtonWidget dBtn = ButtonWidget.builder(
+                ThemedButtonWidget dBtn = new ThemedButtonWidget(
+                    diffTabX, moduleY + 50, 90, 20,
                     Text.literal((isCurrent ? "▶ " : "") + d.getDisplayName()),
                     btn -> {
                         this.syncStateFromWidgets();
                         this.activeDifficultyTuning = d;
                         screen.rebuildWorkspaceChildren();
                     }
-                ).dimensions(diffTabX, moduleY + 38, 90, 20).build();
+                );
+                dBtn.setAccent(UiTheme.ACCENT_GREEN);
+                dBtn.setSelected(isCurrent);
                 screen.addWidget(dBtn);
                 diffTabX += 96;
             }
 
             // Attribute multipliers (Left Column) & Wave Spawning (Right Column)
             DifficultyEntry entry = this.difficultyConfig.getEntry(this.activeDifficultyTuning);
-            int tableY = moduleY + 66;
+            int tableY = moduleY + 78;
             int colWidth = (moduleWidth - 36) / 2;
             int lx = moduleX + 12;
             int rx = moduleX + 24 + colWidth;
@@ -392,7 +415,7 @@ public final class ZombiesWorkspaceView extends AbstractGamemodeWorkspaceView {
     }
 
     private int calculateMaxVisibleWeaponRows(int moduleHeight) {
-        int available = moduleHeight - 48;
+        int available = moduleHeight - 60;
         return Math.max(4, available / 25);
     }
 
@@ -413,7 +436,7 @@ public final class ZombiesWorkspaceView extends AbstractGamemodeWorkspaceView {
         int moduleHeight = this.layout.mainPanel().height() - 104;
 
         if (this.activeTuningSubTab == TuningSubTab.WEAPONS) {
-            int listY = moduleY + 38;
+            int listY = moduleY + 50;
             int rowHeight = 25;
 
             for (int idx = 0; idx < this.activeWeaponRowWidgets.size(); idx++) {
@@ -443,7 +466,7 @@ public final class ZombiesWorkspaceView extends AbstractGamemodeWorkspaceView {
             }
         } else {
             // Difficulty column cards
-            int tableY = moduleY + 66;
+            int tableY = moduleY + 78;
             int colWidth = (moduleWidth - 36) / 2;
             int lx = moduleX + 12;
             int rx = moduleX + 24 + colWidth;
@@ -466,7 +489,7 @@ public final class ZombiesWorkspaceView extends AbstractGamemodeWorkspaceView {
         int moduleWidth = this.layout.mainPanel().width() - 28;
 
         if (this.activeTuningSubTab == TuningSubTab.WEAPONS) {
-            int listY = moduleY + 38;
+            int listY = moduleY + 50;
             int rowHeight = 25;
 
             for (int idx = 0; idx < this.activeWeaponRowWidgets.size(); idx++) {
@@ -486,7 +509,7 @@ public final class ZombiesWorkspaceView extends AbstractGamemodeWorkspaceView {
             }
         } else {
             // Difficulty column text
-            int tableY = moduleY + 66;
+            int tableY = moduleY + 78;
             int colWidth = (moduleWidth - 36) / 2;
             int lx = moduleX + 12;
             int rx = moduleX + 24 + colWidth;
@@ -597,7 +620,6 @@ public final class ZombiesWorkspaceView extends AbstractGamemodeWorkspaceView {
                 ));
             }
         }
-        LAST_ACTIVE_SETTINGS_CACHE.put(this.gameId(), this.exportPresetSettings());
     }
 
     private float parsePositiveFloat(TextFieldWidget field, float fallback) {

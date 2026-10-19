@@ -21,7 +21,11 @@ public abstract class ProtectedItemScreenHandlerMixin {
         }
         if (ProtectedItemService.getInstance().shouldCancelInventoryAction(serverPlayer,
             (ScreenHandler) (Object) this, slotId, button, actionType)) {
-            ProtectedItemFeedback.sendRuleBlockedMessage(serverPlayer);
+            if (actionType == SlotActionType.THROW || slotId < 0) {
+                ProtectedItemFeedback.sendDropBlockedMessage(serverPlayer);
+            } else {
+                ProtectedItemFeedback.sendRuleBlockedMessage(serverPlayer);
+            }
             serverPlayer.currentScreenHandler.syncState();
             serverPlayer.playerScreenHandler.sendContentUpdates();
             ci.cancel();
